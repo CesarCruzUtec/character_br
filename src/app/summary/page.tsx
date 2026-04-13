@@ -7,14 +7,15 @@ import { BracketSummary } from "@/components/BracketSummary";
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { winner, losersByRound, isComplete, resetTournament } =
+  const { winner, losersByRound, isComplete, resetTournament, isHydrated } =
     useTournament();
 
   useEffect(() => {
+    if (!isHydrated) return; // Wait for persisted state to load
     if (!isComplete || !winner) {
       router.push("/");
     }
-  }, [isComplete, winner, router]);
+  }, [isHydrated, isComplete, winner, router]);
 
   if (!winner) return null;
 

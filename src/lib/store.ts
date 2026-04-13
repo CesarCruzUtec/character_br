@@ -24,6 +24,7 @@ export interface TournamentStore {
   } | null;
   isSorting: boolean;
   setIsSorting: (v: boolean) => void;
+  isHydrated: boolean;
 }
 
 export const TournamentContext = createContext<TournamentStore | null>(null);

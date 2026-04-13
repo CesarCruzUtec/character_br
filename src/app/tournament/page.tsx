@@ -23,6 +23,7 @@ export default function TournamentPage() {
     startTournament,
     voteWinner,
     getCurrentMatch,
+    isHydrated,
   } = useTournament();
 
   const { playAudio, pauseAudio } = useAudioController();
@@ -30,6 +31,7 @@ export default function TournamentPage() {
 
   // Start tournament on mount if not started
   useEffect(() => {
+    if (!isHydrated) return; // Wait for persisted state to load
     if (roster.length < 2) {
       router.push("/");
       return;
@@ -37,7 +39,7 @@ export default function TournamentPage() {
     if (rounds.length === 0) {
       startTournament();
     }
-  }, [roster, rounds, startTournament, router]);
+  }, [isHydrated, roster, rounds, startTournament, router]);
 
   // Navigate to summary when complete
   useEffect(() => {

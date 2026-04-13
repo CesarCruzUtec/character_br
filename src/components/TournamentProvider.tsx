@@ -49,21 +49,34 @@ function clearState() {
 }
 
 export function TournamentProvider({ children }: { children: React.ReactNode }) {
-  const persisted = loadState();
-
-  const [roster, setRosterState] = useState<Character[]>(persisted?.roster ?? []);
-  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
-  const [currentRoundIndex, setCurrentRoundIndex] = useState(persisted?.currentRoundIndex ?? 0);
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(persisted?.currentMatchIndex ?? 0);
-  const [isComplete, setIsComplete] = useState(persisted?.isComplete ?? false);
-  const [winner, setWinner] = useState<Character | null>(persisted?.winner ?? null);
-  const [losersByRound, setLosersByRound] = useState<Map<string, Character[]>>(
-    persisted?.losersByRound ? new Map(persisted.losersByRound) : new Map()
-  );
-  const [isSorting, setIsSorting] = useState(persisted?.isSorting ?? false);
+  const [roster, setRosterState] = useState<Character[]>([]);
+  const [rounds, setRounds] = useState<Round[]>([]);
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const [winner, setWinner] = useState<Character | null>(null);
+  const [losersByRound, setLosersByRound] = useState<Map<string, Character[]>>(new Map());
+  const [isSorting, setIsSorting] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const roundsRef = useRef<Round[]>(rounds);
   roundsRef.current = rounds;
+
+  // Load persisted state after hydration to avoid SSR mismatch
+  useEffect(() => {
+    const persisted = loadState();
+    if (persisted) {
+      setRosterState(persisted.roster);
+      setRounds(persisted.rounds);
+      setCurrentRoundIndex(persisted.currentRoundIndex);
+      setCurrentMatchIndex(persisted.currentMatchIndex);
+      setIsComplete(persisted.isComplete);
+      setWinner(persisted.winner);
+      setLosersByRound(new Map(persisted.losersByRound));
+      setIsSorting(persisted.isSorting);
+    }
+    setIsHydrated(true);
+  }, []);
 
   // Persist state whenever it changes (but not completed tournaments)
   useEffect(() => {
@@ -217,6 +230,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     getCurrentMatch,
     isSorting,
     setIsSorting,
+    isHydrated,
   };
 
   return (
