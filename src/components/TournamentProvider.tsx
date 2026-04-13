@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Character, Round } from "@/lib/types";
-import { TournamentContext, TournamentStore } from "@/lib/store";
+import { TournamentContext, TournamentStore, SaveSlot } from "@/lib/store";
 import {
   createFirstRound,
   createNextRound,
   calculateTotalRounds,
   getRoundLosers,
 } from "@/lib/bracket";
+import { addSaveSlot, removeSaveSlot } from "@/lib/saves";
 
 const STORAGE_KEY = "tournament_state";
 
@@ -21,6 +22,7 @@ interface PersistedState {
   winner: Character | null;
   losersByRound: [string, Character[]][];
   isSorting: boolean;
+  currentPastebinId: string;
 }
 
 function loadState(): PersistedState | null {
@@ -58,6 +60,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [losersByRound, setLosersByRound] = useState<Map<string, Character[]>>(new Map());
   const [isSorting, setIsSorting] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [currentPastebinId, setCurrentPastebinId] = useState("");
 
   const roundsRef = useRef<Round[]>(rounds);
   roundsRef.current = rounds;
@@ -74,6 +77,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       setWinner(persisted.winner);
       setLosersByRound(new Map(persisted.losersByRound));
       setIsSorting(persisted.isSorting);
+      setCurrentPastebinId(persisted.currentPastebinId ?? "");
     }
     setIsHydrated(true);
   }, []);
@@ -91,8 +95,9 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       winner,
       losersByRound: Array.from(losersByRound.entries()),
       isSorting,
+      currentPastebinId,
     });
-  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, isSorting]);
+  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, isSorting, currentPastebinId]);
 
   const setRoster = useCallback((r: Character[]) => {
     setRosterState(r);
@@ -210,7 +215,45 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     setWinner(null);
     setLosersByRound(new Map());
     setIsSorting(false);
+    setCurrentPastebinId("");
     clearState();
+  }, []);
+
+  const saveSlot = useCallback(
+    (name: string) => {
+      if (roster.length < 2) return;
+      const slot: SaveSlot = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        pastebinId: currentPastebinId,
+        savedAt: Date.now(),
+        roster,
+        rounds,
+        currentRoundIndex,
+        currentMatchIndex,
+        isComplete,
+        winner,
+        losersByRound: Array.from(losersByRound.entries()),
+      };
+      addSaveSlot(slot);
+    },
+    [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, currentPastebinId]
+  );
+
+  const loadSlot = useCallback((slot: SaveSlot) => {
+    setRosterState(slot.roster);
+    setRounds(slot.rounds);
+    setCurrentRoundIndex(slot.currentRoundIndex);
+    setCurrentMatchIndex(slot.currentMatchIndex);
+    setIsComplete(slot.isComplete);
+    setWinner(slot.winner);
+    setLosersByRound(new Map(slot.losersByRound));
+    setIsSorting(false);
+    setCurrentPastebinId(slot.pastebinId);
+  }, []);
+
+  const deleteSlot = useCallback((slotId: string) => {
+    removeSaveSlot(slotId);
   }, []);
 
   const store: TournamentStore = {
@@ -231,6 +274,11 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     isSorting,
     setIsSorting,
     isHydrated,
+    currentPastebinId,
+    setCurrentPastebinId,
+    saveSlot,
+    loadSlot,
+    deleteSlot,
   };
 
   return (

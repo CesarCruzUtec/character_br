@@ -3,6 +3,20 @@
 import { createContext, useContext } from "react";
 import { Character, Round } from "./types";
 
+export interface SaveSlot {
+  id: string;
+  name: string;
+  pastebinId: string;
+  savedAt: number;
+  roster: Character[];
+  rounds: Round[];
+  currentRoundIndex: number;
+  currentMatchIndex: number;
+  isComplete: boolean;
+  winner: Character | null;
+  losersByRound: [string, Character[]][];
+}
+
 export interface TournamentStore {
   roster: Character[];
   rounds: Round[];
@@ -25,6 +39,12 @@ export interface TournamentStore {
   isSorting: boolean;
   setIsSorting: (v: boolean) => void;
   isHydrated: boolean;
+  // Save/Load
+  currentPastebinId: string;
+  setCurrentPastebinId: (id: string) => void;
+  saveSlot: (name: string) => void;
+  loadSlot: (slot: SaveSlot) => void;
+  deleteSlot: (slotId: string) => void;
 }
 
 export const TournamentContext = createContext<TournamentStore | null>(null);

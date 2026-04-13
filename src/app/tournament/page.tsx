@@ -8,6 +8,7 @@ import { MatchCard } from "@/components/MatchCard";
 import { SortingAnimation } from "@/components/SortingAnimation";
 import { useAudioController } from "@/hooks/useAudioController";
 import { HoverInfoCard } from "@/components/HoverInfoCard";
+import { SaveMenu } from "@/components/SaveMenu";
 import { Character } from "@/lib/types";
 
 export default function TournamentPage() {
@@ -28,6 +29,7 @@ export default function TournamentPage() {
 
   const { playAudio, pauseAudio } = useAudioController();
   const [hoveredCharacter, setHoveredCharacter] = useState<Character | null>(null);
+  const [showSaveMenu, setShowSaveMenu] = useState(false);
 
   // Start tournament on mount if not started
   useEffect(() => {
@@ -122,13 +124,27 @@ export default function TournamentPage() {
                 {currentRound?.matches.length ?? 0}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-600">
-                {roster.length} characters
-              </p>
-              <p className="text-xs font-medium text-[#d4a853]">
-                Round {currentRoundIndex + 1}
-              </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push("/")}
+                className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => setShowSaveMenu(true)}
+                className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+              >
+                Save / Load
+              </button>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-600">
+                  {roster.length} characters
+                </p>
+                <p className="text-xs font-medium text-[#d4a853]">
+                  Round {currentRoundIndex + 1}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -235,6 +251,11 @@ export default function TournamentPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Save/Load Menu */}
+      {showSaveMenu && (
+        <SaveMenu onClose={() => setShowSaveMenu(false)} />
       )}
     </main>
   );

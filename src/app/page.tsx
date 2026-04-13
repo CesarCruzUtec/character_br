@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTournament } from "@/lib/store";
+import { LoadPanel } from "@/components/LoadPanel";
 
 export default function HomePage() {
   const [pastebinId, setPastebinId] = useState("");
@@ -11,7 +12,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const router = useRouter();
-  const { setRoster } = useTournament();
+  const { setRoster, setCurrentPastebinId } = useTournament();
 
   const handleStart = useCallback(async () => {
     const trimmed = pastebinId.trim();
@@ -37,6 +38,7 @@ export default function HomePage() {
       }
 
       setRoster(data);
+      setCurrentPastebinId(trimmed);
       router.push("/tournament");
     } catch (err) {
       setError(
@@ -45,7 +47,7 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [pastebinId, setRoster, router]);
+  }, [pastebinId, setRoster, setCurrentPastebinId, router]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -145,6 +147,10 @@ export default function HomePage() {
               "Start Tournament"
             )}
           </motion.button>
+
+          <div className="mt-3">
+            <LoadPanel />
+          </div>
         </motion.div>
 
         {/* Instructions */}
