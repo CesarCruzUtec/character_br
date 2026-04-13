@@ -55,7 +55,7 @@ export default function HomePage() {
   );
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-gray-900 to-black px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[#09090b] px-4">
       <motion.div
         className="w-full max-w-md text-center"
         initial={{ opacity: 0, y: 30 }}
@@ -64,30 +64,31 @@ export default function HomePage() {
       >
         {/* Logo / Title */}
         <motion.div
-          className="mb-8"
+          className="mb-10"
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
-          <h1 className="text-5xl font-extrabold tracking-tight text-white md:text-6xl">
-            ⚔️ Battle
-            <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-              Royale
-            </span>
+          <h1
+            className="text-6xl tracking-wider text-white md:text-7xl"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            BATTLE
+            <span className="block text-[#d4a853]">ROYALE</span>
           </h1>
-          <p className="mt-3 text-gray-400">
-            The ultimate character tournament. Who will reign supreme?
+          <p className="mt-4 text-sm tracking-widest uppercase text-zinc-500">
+            The ultimate character tournament
           </p>
         </motion.div>
 
         {/* Input Section */}
         <motion.div
-          className="rounded-2xl border border-gray-700/50 bg-gray-800/50 p-6 backdrop-blur-sm"
+          className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <label className="mb-2 block text-left text-sm font-medium text-gray-300">
+          <label className="mb-2 block text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
             Pastebin ID
           </label>
           <input
@@ -96,14 +97,14 @@ export default function HomePage() {
             onChange={(e) => setPastebinId(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="e.g. abc123XYZ"
-            className="w-full rounded-xl border border-gray-600 bg-gray-900 px-4 py-3 text-white placeholder-gray-500 outline-none transition-colors focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-600 outline-none transition-all focus:border-[#d4a853]/50 focus:ring-1 focus:ring-[#d4a853]/30"
             disabled={isLoading}
           />
 
           <AnimatePresence>
             {error && (
               <motion.div
-                className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-left"
+                className="mt-4 rounded-lg border border-red-900/50 bg-red-950/30 p-3 text-left"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -112,7 +113,7 @@ export default function HomePage() {
                 {errorDetails.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {errorDetails.map((detail, i) => (
-                      <li key={i} className="text-xs text-red-300/70">
+                      <li key={i} className="text-xs text-red-400/60">
                         • {detail}
                       </li>
                     ))}
@@ -125,8 +126,8 @@ export default function HomePage() {
           <motion.button
             onClick={handleStart}
             disabled={isLoading || !pastebinId.trim()}
-            className="mt-4 w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 text-lg font-bold text-white shadow-lg transition-all hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-            whileHover={{ scale: 1.02 }}
+            className="mt-4 w-full rounded-lg bg-[#d4a853] py-3 text-sm font-semibold uppercase tracking-wider text-zinc-950 transition-all hover:bg-[#e0b560] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-[#d4a853]"
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
           >
             {isLoading ? (
@@ -136,35 +137,35 @@ export default function HomePage() {
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="inline-block"
                 >
-                  ⚙️
+                  ◌
                 </motion.span>
-                Loading...
+                Loading
               </span>
             ) : (
-              "🎮 Start Tournament"
+              "Start Tournament"
             )}
           </motion.button>
         </motion.div>
 
         {/* Instructions */}
         <motion.div
-          className="mt-8 text-left text-sm text-gray-500"
+          className="mt-8 text-left text-xs text-zinc-600"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <p className="mb-2 font-medium text-gray-400">How to use:</p>
-          <ol className="list-inside list-decimal space-y-1">
+          <p className="mb-2 font-medium uppercase tracking-wider text-zinc-500">How to use</p>
+          <ol className="list-inside list-decimal space-y-1.5 leading-relaxed">
             <li>Create a Pastebin with your character JSON</li>
             <li>Paste the Pastebin ID above</li>
-            <li>Vote on matchups until a champion emerges!</li>
+            <li>Vote on matchups until a champion emerges</li>
           </ol>
-          <p className="mt-3 text-xs text-gray-600">
-            Expected JSON: Array of objects with <code className="text-purple-400">id</code>,{" "}
-            <code className="text-purple-400">name</code>,{" "}
-            <code className="text-purple-400">description</code>,{" "}
-            <code className="text-purple-400">images</code> (array of URLs), and optional{" "}
-            <code className="text-purple-400">music</code> (URL).
+          <p className="mt-3 text-xs text-zinc-600">
+            Expected JSON: Array of objects with <code className="text-[#d4a853]">id</code>,{" "}
+            <code className="text-[#d4a853]">name</code>,{" "}
+            <code className="text-[#d4a853]">description</code>,{" "}
+            <code className="text-[#d4a853]">images</code> (array of URLs), and optional{" "}
+            <code className="text-[#d4a853]">music</code> (URL).
           </p>
         </motion.div>
       </motion.div>

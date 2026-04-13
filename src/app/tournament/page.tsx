@@ -114,7 +114,7 @@ export default function TournamentPage() {
   if (roster.length < 2) return null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black">
+    <main className="min-h-screen bg-[#09090b]">
       {/* Sorting Animation Overlay */}
       <AnimatePresence>
         {isSorting && currentRound && (
@@ -130,21 +130,24 @@ export default function TournamentPage() {
       {!isSorting && currentMatch && (
         <div className="flex min-h-screen flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-zinc-800/80 px-6 py-3">
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2
+                className="text-lg tracking-wider text-white"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 {currentMatch.round.name}
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-[10px] uppercase tracking-widest text-zinc-600">
                 Match {currentMatchIndex + 1} of{" "}
                 {currentRound?.matches.length ?? 0}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500">
+              <p className="text-[10px] uppercase tracking-widest text-zinc-600">
                 {roster.length} characters
               </p>
-              <p className="text-xs text-purple-400">
+              <p className="text-xs font-medium text-[#d4a853]">
                 Round {currentRoundIndex + 1}
               </p>
             </div>
@@ -171,7 +174,7 @@ export default function TournamentPage() {
                 {/* VS circle — centered on the seam */}
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                   <motion.div
-                    className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black/70 backdrop-blur-md md:h-18 md:w-18"
+                    className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950/90 backdrop-blur-md md:h-14 md:w-14"
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{
@@ -182,8 +185,8 @@ export default function TournamentPage() {
                     }}
                   >
                     <span
-                      className="text-lg font-black text-white md:text-xl"
-                      style={{ fontFamily: "var(--font-display)" }}
+                      className="text-xs font-semibold uppercase tracking-widest text-zinc-400 md:text-sm"
+                      style={{ fontFamily: "var(--font-sans)" }}
                     >
                       VS
                     </span>
@@ -209,24 +212,26 @@ export default function TournamentPage() {
               </>
             ) : (
               /* Bye round */
-              <div className="flex flex-1 items-center justify-center bg-gray-900">
+              <div className="flex flex-1 items-center justify-center bg-zinc-950">
                 <motion.div
                   className="text-center"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <span className="text-6xl">🎉</span>
-                  <p className="mt-4 text-2xl font-bold text-gray-300">
+                  <p
+                    className="text-3xl tracking-wider text-zinc-400"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
                     BYE ROUND
                   </p>
-                  <p className="mt-2 text-gray-500">
-                    {currentMatch.match.character1.name} advances automatically!
+                  <p className="mt-3 text-sm text-zinc-500">
+                    {currentMatch.match.character1.name} advances automatically
                   </p>
                   <button
                     onClick={() => handleVote(currentMatch.match.character1)}
-                    className="mt-6 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-base font-bold text-white hover:from-purple-500 hover:to-pink-500"
+                    className="mt-6 rounded-lg bg-[#d4a853] px-8 py-3 text-sm font-semibold uppercase tracking-wider text-zinc-950 hover:bg-[#e0b560]"
                   >
-                    Continue →
+                    Continue
                   </button>
                 </motion.div>
               </div>
@@ -234,17 +239,17 @@ export default function TournamentPage() {
           </div>
 
           {/* Progress indicator */}
-          <div className="border-t border-gray-800 px-4 py-3">
+          <div className="border-t border-zinc-800/80 px-6 py-3">
             <div className="mx-auto flex max-w-md items-center gap-1">
               {currentRound?.matches.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1 flex-1 rounded-full transition-colors ${
+                  className={`h-px flex-1 rounded-full transition-colors ${
                     i < currentMatchIndex
-                      ? "bg-green-500"
+                      ? "bg-zinc-500"
                       : i === currentMatchIndex
-                      ? "bg-purple-500"
-                      : "bg-gray-700"
+                      ? "bg-[#d4a853]"
+                      : "bg-zinc-800"
                   }`}
                 />
               ))}

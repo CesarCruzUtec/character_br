@@ -1,16 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #09090b;
+  --foreground: #fafafa;
   --font-display: "Bebas Neue", "Impact", sans-serif;
+  --gold: #d4a853;
+  --gold-dim: #b8923e;
+  --gold-glow: rgba(212, 168, 83, 0.15);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Inter", var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -18,31 +21,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-}
-
-/* ── Diagonal split-screen clip paths (touching, no gap) ──────────── */
-
-.clip-left {
-  clip-path: polygon(0 0, 100% 0, 60% 100%, 0 100%);
-}
-
-.clip-right {
-  clip-path: polygon(40% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-@media (max-width: 768px) {
-  .clip-left {
-    clip-path: polygon(0 0, 100% 0, 70% 100%, 0 100%);
-  }
-  .clip-right {
-    clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
-  }
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Custom scrollbar ─────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 ::-webkit-scrollbar-track {
@@ -50,15 +36,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.4);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.7);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }

@@ -19,7 +19,7 @@ export default function SummaryPage() {
   if (!winner) return null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black">
+    <main className="min-h-screen bg-[#09090b]">
       <BracketSummary
         winner={winner}
         losersByRound={losersByRound}

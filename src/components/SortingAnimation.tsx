@@ -45,14 +45,15 @@ export function SortingAnimation({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09090b]/95 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
         {/* Title */}
         <motion.h2
-          className="mb-2 text-3xl font-bold text-white md:text-4xl"
+          className="mb-2 text-4xl tracking-wider text-white md:text-5xl"
+          style={{ fontFamily: "var(--font-display)" }}
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -61,14 +62,14 @@ export function SortingAnimation({
         </motion.h2>
 
         <motion.p
-          className="mb-8 text-lg text-purple-300"
+          className="mb-8 text-sm uppercase tracking-widest text-zinc-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          {phase === "shuffling" && "🎲 Shuffling contestants..."}
-          {phase === "pairing" && "⚔️ Drawing matchups..."}
-          {phase === "done" && "✅ Ready!"}
+          {phase === "shuffling" && "Shuffling contestants"}
+          {phase === "pairing" && "Drawing matchups"}
+          {phase === "done" && "Ready"}
         </motion.p>
 
         {/* Character avatars shuffling */}
@@ -76,7 +77,7 @@ export function SortingAnimation({
           {characters.map((char, i) => (
             <motion.div
               key={String(char.id)}
-              className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-purple-500/50 md:h-16 md:w-16"
+              className="relative h-14 w-14 overflow-hidden rounded-full border border-zinc-700 md:h-16 md:w-16"
               initial={{
                 x: (Math.random() - 0.5) * 400,
                 y: (Math.random() - 0.5) * 400,
@@ -139,21 +140,21 @@ export function SortingAnimation({
             {pairs.slice(0, 6).map(([c1, c2], i) => (
               <motion.div
                 key={i}
-                className="flex items-center gap-3 text-sm text-gray-300"
+                className="flex items-center gap-3 text-sm text-zinc-300"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.15 }}
               >
-                <span className="font-medium text-white">{c1.name}</span>
-                <span className="text-purple-400 font-bold">VS</span>
-                <span className="font-medium text-white">
+                <span className="font-medium text-zinc-200">{c1.name}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">VS</span>
+                <span className="font-medium text-zinc-200">
                   {c2 ? c2.name : "BYE"}
                 </span>
               </motion.div>
             ))}
             {pairs.length > 6 && (
-              <span className="text-xs text-gray-500">
-                ...and {pairs.length - 6} more matches
+              <span className="text-[10px] uppercase tracking-widest text-zinc-600">
+                +{pairs.length - 6} more matches
               </span>
             )}
           </motion.div>
@@ -161,13 +162,13 @@ export function SortingAnimation({
 
         {/* Progress bar */}
         <motion.div
-          className="mt-8 h-1 w-64 overflow-hidden rounded-full bg-gray-700"
+          className="mt-8 h-px w-64 overflow-hidden rounded-full bg-zinc-800"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
           <motion.div
-            className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+            className="h-full bg-[#d4a853]"
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
             transition={{ duration: 3, ease: "linear" }}
