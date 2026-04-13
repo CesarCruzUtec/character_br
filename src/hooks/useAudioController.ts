@@ -2,138 +2,280 @@
 
 import { useRef, useCallback, useEffect } from "react";
 import { Howl } from "howler";
+import { isYouTubeUrl, extractYouTubeVideoId } from "@/lib/youtube";
 
-interface AudioEntry {
+// ─── Howler (direct audio files) ───────────────────────────────────────────
+
+interface HowlerEntry {
+  type: "howler";
   howl: Howl;
   url: string;
 }
 
-/**
- * Custom hook for managing crossfading audio playback.
- * Handles play/pause with smooth fade transitions.
- */
+// ─── YouTube IFrame Player API ─────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    YT: {
+      Player: new (
+        element: HTMLElement | string,
+        config: Record<string, unknown>
+      ) => YTPlayer;
+      PlayerState: { ENDED: number; PLAYING: number; PAUSED: number; BUFFERING: number };
+      ready: (callback: () => void) => void;
+    };
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
+interface YTPlayer {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  setVolume: (v: number) => void;
+  getVolume: () => number;
+  getPlayerState: () => number;
+  destroy: () => void;
+}
+
+interface YouTubeEntry {
+  type: "youtube";
+  player: YTPlayer;
+  videoId: string;
+  container: HTMLDivElement;
+}
+
+type AudioEntry = HowlerEntry | YouTubeEntry;
+
+// ─── YouTube API loader (singleton) ────────────────────────────────────────
+
+let ytApiLoaded = false;
+let ytApiLoading = false;
+const ytReadyQueue: (() => void)[] = [];
+
+function ensureYouTubeAPI(): Promise<void> {
+  if (ytApiLoaded) return Promise.resolve();
+  if (ytApiLoading) {
+    return new Promise((resolve) => ytReadyQueue.push(resolve));
+  }
+  ytApiLoading = true;
+  return new Promise((resolve) => {
+    ytReadyQueue.push(resolve);
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    document.head.appendChild(script);
+    window.onYouTubeIframeAPIReady = () => {
+      ytApiLoaded = true;
+      ytApiLoading = false;
+      ytReadyQueue.forEach((cb) => cb());
+      ytReadyQueue.length = 0;
+    };
+  });
+}
+
+// ─── Unified audio controller hook ─────────────────────────────────────────
+
 export function useAudioController() {
   const audioMapRef = useRef<Map<string, AudioEntry>>(new Map());
   const currentPlayingIdRef = useRef<string | null>(null);
   const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ytContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytFadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const FADE_DURATION = 600; // ms
+  const FADE_DURATION = 600;
+  const FADE_STEP = 50;
 
-  const getOrCreateHowl = useCallback((characterId: string, url: string): Howl | null => {
-    if (!url) return null;
-
-    const existing = audioMapRef.current.get(characterId);
-    if (existing && existing.url === url) {
-      return existing.howl;
-    }
-
-    // Stop and unload old one if exists
-    if (existing) {
-      existing.howl.stop();
-      existing.howl.unload();
-    }
-
-    try {
-      const howl = new Howl({
-        src: [url],
-        html5: true,
-        loop: true,
-        volume: 0,
-        onloaderror: () => {
-          console.warn(`Failed to load audio for character ${characterId}`);
-        },
-      });
-
-      audioMapRef.current.set(characterId, { howl, url });
-      return howl;
-    } catch {
-      console.warn(`Failed to create Howl for character ${characterId}`);
-      return null;
-    }
+  // Create hidden container for YouTube players
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const div = document.createElement("div");
+    div.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;overflow:hidden;";
+    div.id = "yt-audio-container";
+    document.body.appendChild(div);
+    ytContainerRef.current = div;
+    return () => { div.remove(); };
   }, []);
 
-  const playAudio = useCallback(
-    (characterId: string, url: string) => {
-      if (!url) return;
+  // ── Howler helpers ─────────────────────────────────────────────────────
 
-      // Clear any pending fade-out
-      if (fadeOutTimerRef.current) {
-        clearTimeout(fadeOutTimerRef.current);
-        fadeOutTimerRef.current = null;
+  const getOrCreateHowl = useCallback(
+    (characterId: string, url: string): Howl | null => {
+      const existing = audioMapRef.current.get(characterId);
+      if (existing?.type === "howler" && existing.url === url) return existing.howl;
+      if (existing?.type === "howler") {
+        existing.howl.stop();
+        existing.howl.unload();
+      }
+      // If it was a YouTube player, destroy it
+      if (existing?.type === "youtube") {
+        existing.player.destroy();
+        existing.container.remove();
+      }
+      try {
+        const howl = new Howl({ src: [url], html5: true, loop: true, volume: 0 });
+        const entry: HowlerEntry = { type: "howler", howl, url };
+        audioMapRef.current.set(characterId, entry);
+        return howl;
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
+
+  // ── YouTube helpers ────────────────────────────────────────────────────
+
+  const getOrCreateYTPlayer = useCallback(
+    async (characterId: string, videoId: string): Promise<YouTubeEntry | null> => {
+      const existing = audioMapRef.current.get(characterId);
+      if (existing?.type === "youtube" && existing.videoId === videoId) return existing;
+      if (existing?.type === "youtube") {
+        existing.player.destroy();
+        existing.container.remove();
+      }
+      if (existing?.type === "howler") {
+        existing.howl.stop();
+        existing.howl.unload();
       }
 
-      // If same character is already playing, just ensure it's audible
+      await ensureYouTubeAPI();
+      if (!ytContainerRef.current) return null;
+
+      return new Promise((resolve) => {
+        const playerDiv = document.createElement("div");
+        playerDiv.id = `yt-audio-${characterId}-${Date.now()}`;
+        ytContainerRef.current!.appendChild(playerDiv);
+
+        window.YT.ready(() => {
+          try {
+            const player = new window.YT.Player(playerDiv.id, {
+              height: "0",
+              width: "0",
+              videoId,
+              playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, loop: 1, playlist: videoId },
+              events: {
+                onReady: () => {
+                  const entry: YouTubeEntry = { type: "youtube", player, videoId, container: playerDiv };
+                  audioMapRef.current.set(characterId, entry);
+                  resolve(entry);
+                },
+                onError: () => { playerDiv.remove(); resolve(null); },
+              },
+            });
+          } catch { playerDiv.remove(); resolve(null); }
+        });
+      });
+    },
+    []
+  );
+
+  // ── Fade helpers ───────────────────────────────────────────────────────
+
+  const fadeHowler = useCallback(
+    (howl: Howl, from: number, to: number, onComplete?: () => void) => {
+      howl.fade(from, to, FADE_DURATION);
+      if (onComplete) {
+        if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = setTimeout(onComplete, FADE_DURATION);
+      }
+    },
+    []
+  );
+
+  const fadeYT = useCallback(
+    (player: YTPlayer, from: number, to: number, onComplete?: () => void) => {
+      if (ytFadeIntervalRef.current) clearInterval(ytFadeIntervalRef.current);
+      const steps = Math.max(1, Math.floor(FADE_DURATION / FADE_STEP));
+      const increment = (to - from) / steps;
+      let step = 0;
+      ytFadeIntervalRef.current = setInterval(() => {
+        step++;
+        player.setVolume(Math.max(0, Math.min(100, Math.round(from + increment * step))));
+        if (step >= steps) {
+          if (ytFadeIntervalRef.current) { clearInterval(ytFadeIntervalRef.current); ytFadeIntervalRef.current = null; }
+          player.setVolume(to);
+          onComplete?.();
+        }
+      }, FADE_STEP);
+    },
+    []
+  );
+
+  // ── Public API ─────────────────────────────────────────────────────────
+
+  const playAudio = useCallback(
+    async (characterId: string, url: string) => {
+      if (!url) return;
+
+      const isYT = isYouTubeUrl(url);
+
+      // If same character already playing, just boost volume
       if (currentPlayingIdRef.current === characterId) {
         const entry = audioMapRef.current.get(characterId);
-        if (entry && entry.howl.playing()) {
-          entry.howl.fade(entry.howl.volume(), 1, FADE_DURATION);
+        if (entry?.type === "howler" && entry.howl.playing()) {
+          fadeHowler(entry.howl, entry.howl.volume(), 1);
+          return;
+        }
+        if (entry?.type === "youtube" && entry.player.getPlayerState() === window.YT?.PlayerState?.PLAYING) {
+          fadeYT(entry.player, entry.player.getVolume(), 100);
           return;
         }
       }
 
       // Fade out current audio
-      if (currentPlayingIdRef.current) {
-        const currentEntry = audioMapRef.current.get(currentPlayingIdRef.current);
-        if (currentEntry) {
-          const currentHowl = currentEntry.howl;
-          const currentVol = currentHowl.volume();
-          currentHowl.fade(currentVol, 0, FADE_DURATION);
-          // Pause after fade completes
-          const id = currentPlayingIdRef.current;
-          setTimeout(() => {
-            const entry = audioMapRef.current.get(id);
-            if (entry && entry.howl.volume() === 0) {
-              entry.howl.pause();
-            }
-          }, FADE_DURATION);
+      if (currentPlayingIdRef.current && currentPlayingIdRef.current !== characterId) {
+        const prev = audioMapRef.current.get(currentPlayingIdRef.current);
+        if (prev?.type === "howler") {
+          fadeHowler(prev.howl, prev.howl.volume(), 0, () => prev.howl.pause());
+        } else if (prev?.type === "youtube") {
+          fadeYT(prev.player, prev.player.getVolume(), 0, () => prev.player.pauseVideo());
         }
       }
 
       // Play new audio
-      const howl = getOrCreateHowl(characterId, url);
-      if (howl) {
+      if (isYT) {
+        const videoId = extractYouTubeVideoId(url);
+        if (!videoId) return;
+        const entry = await getOrCreateYTPlayer(characterId, videoId);
+        if (!entry) return;
         currentPlayingIdRef.current = characterId;
-        if (!howl.playing()) {
-          howl.play();
-        }
-        howl.fade(0, 1, FADE_DURATION);
+        entry.player.playVideo();
+        setTimeout(() => { entry.player.setVolume(0); fadeYT(entry.player, 0, 100); }, 200);
+      } else {
+        const howl = getOrCreateHowl(characterId, url);
+        if (!howl) return;
+        currentPlayingIdRef.current = characterId;
+        if (!howl.playing()) howl.play();
+        fadeHowler(howl, 0, 1);
       }
     },
-    [getOrCreateHowl]
+    [getOrCreateHowl, getOrCreateYTPlayer, fadeHowler, fadeYT]
   );
 
   const pauseAudio = useCallback(
     (characterId: string) => {
       if (currentPlayingIdRef.current !== characterId) return;
-
       const entry = audioMapRef.current.get(characterId);
       if (!entry) return;
 
-      const howl = entry.howl;
-      const currentVol = howl.volume();
-
-      howl.fade(currentVol, 0, FADE_DURATION);
-      fadeOutTimerRef.current = setTimeout(() => {
-        if (howl.volume() === 0) {
-          howl.pause();
-        }
-        if (currentPlayingIdRef.current === characterId) {
-          currentPlayingIdRef.current = null;
-        }
-      }, FADE_DURATION);
+      if (entry.type === "howler") {
+        fadeHowler(entry.howl, entry.howl.volume(), 0, () => entry.howl.pause());
+      } else {
+        fadeYT(entry.player, entry.player.getVolume(), 0, () => entry.player.pauseVideo());
+      }
+      currentPlayingIdRef.current = null;
     },
-    []
+    [fadeHowler, fadeYT]
   );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (fadeOutTimerRef.current) {
-        clearTimeout(fadeOutTimerRef.current);
-      }
+      if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
+      if (ytFadeIntervalRef.current) clearInterval(ytFadeIntervalRef.current);
       audioMapRef.current.forEach((entry) => {
-        entry.howl.stop();
-        entry.howl.unload();
+        if (entry.type === "howler") { entry.howl.stop(); entry.howl.unload(); }
+        else { entry.player.destroy(); entry.container.remove(); }
       });
       audioMapRef.current.clear();
     };

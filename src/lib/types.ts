@@ -6,7 +6,7 @@ export const CharacterSchema = z.object({
   name: z.string(),
   description: z.string(),
   images: z.array(z.string().url()).min(1, "At least one image is required"),
-  music: z.string().url().optional(),
+  music: z.string().url().optional(), // Direct audio file URL or YouTube URL
 });
 
 // Zod schema for the full roster
