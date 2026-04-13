@@ -214,16 +214,17 @@ export function useAudioController() {
 
       const isYT = isYouTubeUrl(url);
 
-      // Immediately stop whatever is currently playing (no crossfade on rapid switches)
+      // Immediately stop whatever is currently playing
       if (currentPlayingIdRef.current && currentPlayingIdRef.current !== characterId) {
         const prev = audioMapRef.current.get(currentPlayingIdRef.current);
         if (prev?.type === "howler") {
-          prev.howl.fade(prev.howl.volume(), 0, 150);
-          setTimeout(() => prev.howl.pause(), 150);
+          prev.howl.stop();
+          prev.howl.volume(0);
         } else if (prev?.type === "youtube") {
           prev.player.setVolume(0);
           prev.player.pauseVideo();
         }
+        currentPlayingIdRef.current = null;
       }
 
       // If same character already playing, just ensure volume is up
@@ -295,13 +296,15 @@ export function useAudioController() {
       playGenerationRef.current++;
 
       if (entry.type === "howler") {
-        fadeHowler(entry.howl, entry.howl.volume(), 0, () => entry.howl.pause());
+        entry.howl.stop();
+        entry.howl.volume(0);
       } else {
-        fadeYT(entry.player, entry.player.getVolume(), 0, () => entry.player.pauseVideo());
+        entry.player.setVolume(0);
+        entry.player.pauseVideo();
       }
       currentPlayingIdRef.current = null;
     },
-    [fadeHowler, fadeYT]
+    []
   );
 
   // Cleanup on unmount

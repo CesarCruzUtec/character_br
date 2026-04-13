@@ -1,8 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 @import "tailwindcss";
 
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --font-display: "Bebas Neue", "Impact", sans-serif;
 }
 
 @theme inline {
@@ -18,20 +20,45 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom scrollbar */
+/* ── Diagonal split-screen clip paths (touching, no gap) ──────────── */
+
+.clip-left {
+  clip-path: polygon(0 0, 100% 0, 60% 100%, 0 100%);
+}
+
+.clip-right {
+  clip-path: polygon(40% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+@media (max-width: 768px) {
+  .clip-left {
+    clip-path: polygon(0 0, 100% 0, 70% 100%, 0 100%);
+  }
+  .clip-right {
+    clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────────── */
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 3px;
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6a6a6a;
+  background: rgba(168, 85, 247, 0.7);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.4) transparent;
 }

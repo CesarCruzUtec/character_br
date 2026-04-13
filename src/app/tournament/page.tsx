@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTournament } from "@/lib/store";
 import { MatchCard } from "@/components/MatchCard";
 import { SortingAnimation } from "@/components/SortingAnimation";
 import { useAudioController } from "@/hooks/useAudioController";
+import { HoverInfoCard } from "@/components/HoverInfoCard";
 import { Character } from "@/lib/types";
 
 export default function TournamentPage() {
@@ -25,6 +26,7 @@ export default function TournamentPage() {
   } = useTournament();
 
   const { playAudio, pauseAudio } = useAudioController();
+  const [hoveredCharacter, setHoveredCharacter] = useState<Character | null>(null);
 
   // Start tournament on mount if not started
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function TournamentPage() {
 
   const handleHoverStart = useCallback(
     (character: Character) => {
+      setHoveredCharacter(character);
       if (character.music) {
         playAudio(String(character.id), character.music);
       }
@@ -65,6 +68,7 @@ export default function TournamentPage() {
 
   const handleHoverEnd = useCallback(
     (character: Character) => {
+      setHoveredCharacter(null);
       if (character.music) {
         pauseAudio(String(character.id));
       }
@@ -123,87 +127,84 @@ export default function TournamentPage() {
             </div>
           </div>
 
-          {/* Match Cards */}
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 p-4 md:flex-row md:gap-10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentMatch.match.id + "-c1"}
-                className="w-full max-w-sm md:w-2/5"
-                initial={{ x: -100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -100, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              >
-                <MatchCard
-                  character={currentMatch.match.character1}
-                  onVote={handleVote}
-                  onHoverStart={handleHoverStart}
-                  onHoverEnd={handleHoverEnd}
-                />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* VS Divider */}
-            <motion.div
-              className="flex-shrink-0"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 500,
-                damping: 15,
-                delay: 0.3,
-              }}
-            >
-              <span className="text-4xl font-black text-purple-500 md:text-5xl">
-                VS
-              </span>
-            </motion.div>
-
+          {/* Split Screen Match — halves touch directly */}
+          <div className="relative flex flex-1 overflow-hidden">
             {currentMatch.match.character2 ? (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentMatch.match.id + "-c2"}
-                  className="w-full max-w-sm md:w-2/5"
-                  initial={{ x: 100, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 100, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 25,
-                  }}
-                >
+              <>
+                {/* Left character */}
+                <AnimatePresence mode="wait">
                   <MatchCard
+                    key={currentMatch.match.id + "-c1"}
+                    character={currentMatch.match.character1}
+                    onVote={handleVote}
+                    onHoverStart={handleHoverStart}
+                    onHoverEnd={handleHoverEnd}
+                    side="left"
+                    isHovered={hoveredCharacter?.id === currentMatch.match.character1.id}
+                  />
+                </AnimatePresence>
+
+                {/* VS circle — centered on the seam */}
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                  <motion.div
+                    className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black/70 backdrop-blur-md md:h-18 md:w-18"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 15,
+                      delay: 0.3,
+                    }}
+                  >
+                    <span
+                      className="text-lg font-black text-white md:text-xl"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      VS
+                    </span>
+                  </motion.div>
+                </div>
+
+                {/* Right character */}
+                <AnimatePresence mode="wait">
+                  <MatchCard
+                    key={currentMatch.match.id + "-c2"}
                     character={currentMatch.match.character2}
                     onVote={handleVote}
                     onHoverStart={handleHoverStart}
                     onHoverEnd={handleHoverEnd}
+                    side="right"
+                    isHovered={hoveredCharacter?.id === currentMatch.match.character2.id}
                   />
-                </motion.div>
-              </AnimatePresence>
+                </AnimatePresence>
+
+                {/* Hover info card — bottom center, description only */}
+                <HoverInfoCard character={hoveredCharacter} />
+              </>
             ) : (
-              <motion.div
-                className="flex w-full max-w-sm items-center justify-center rounded-2xl border-2 border-dashed border-gray-700 bg-gray-800/30 p-8 md:w-2/5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <div className="text-center">
-                  <span className="text-4xl">🎉</span>
-                  <p className="mt-2 text-lg font-bold text-gray-400">
+              /* Bye round */
+              <div className="flex flex-1 items-center justify-center bg-gray-900">
+                <motion.div
+                  className="text-center"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <span className="text-6xl">🎉</span>
+                  <p className="mt-4 text-2xl font-bold text-gray-300">
                     BYE ROUND
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="mt-2 text-gray-500">
                     {currentMatch.match.character1.name} advances automatically!
                   </p>
                   <button
                     onClick={() => handleVote(currentMatch.match.character1)}
-                    className="mt-4 rounded-lg bg-purple-600 px-6 py-2 text-sm font-bold text-white hover:bg-purple-500"
+                    className="mt-6 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-base font-bold text-white hover:from-purple-500 hover:to-pink-500"
                   >
                     Continue →
                   </button>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             )}
           </div>
 
