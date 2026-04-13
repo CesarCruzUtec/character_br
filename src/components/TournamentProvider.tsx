@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Character, Round } from "@/lib/types";
 import { TournamentContext, TournamentStore } from "@/lib/store";
 import {
@@ -10,20 +10,76 @@ import {
   getRoundLosers,
 } from "@/lib/bracket";
 
-export function TournamentProvider({ children }: { children: React.ReactNode }) {
-  const [roster, setRosterState] = useState<Character[]>([]);
-  const [rounds, setRounds] = useState<Round[]>([]);
-  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
-  const [winner, setWinner] = useState<Character | null>(null);
-  const [losersByRound, setLosersByRound] = useState<Map<string, Character[]>>(
-    new Map()
-  );
-  const [isSorting, setIsSorting] = useState(false);
+const STORAGE_KEY = "tournament_state";
 
-  const roundsRef = useRef<Round[]>([]);
+interface PersistedState {
+  roster: Character[];
+  rounds: Round[];
+  currentRoundIndex: number;
+  currentMatchIndex: number;
+  isComplete: boolean;
+  winner: Character | null;
+  losersByRound: [string, Character[]][];
+  isSorting: boolean;
+}
+
+function loadState(): PersistedState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedState;
+  } catch {
+    return null;
+  }
+}
+
+function saveState(state: PersistedState) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
+}
+
+function clearState() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+export function TournamentProvider({ children }: { children: React.ReactNode }) {
+  const persisted = loadState();
+
+  const [roster, setRosterState] = useState<Character[]>(persisted?.roster ?? []);
+  const [rounds, setRounds] = useState<Round[]>(persisted?.rounds ?? []);
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(persisted?.currentRoundIndex ?? 0);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(persisted?.currentMatchIndex ?? 0);
+  const [isComplete, setIsComplete] = useState(persisted?.isComplete ?? false);
+  const [winner, setWinner] = useState<Character | null>(persisted?.winner ?? null);
+  const [losersByRound, setLosersByRound] = useState<Map<string, Character[]>>(
+    persisted?.losersByRound ? new Map(persisted.losersByRound) : new Map()
+  );
+  const [isSorting, setIsSorting] = useState(persisted?.isSorting ?? false);
+
+  const roundsRef = useRef<Round[]>(rounds);
   roundsRef.current = rounds;
+
+  // Persist state whenever it changes (but not completed tournaments)
+  useEffect(() => {
+    if (isComplete) return; // Don't persist completed tournaments
+    if (roster.length === 0 && rounds.length === 0) return; // Don't save empty initial state
+    saveState({
+      roster,
+      rounds,
+      currentRoundIndex,
+      currentMatchIndex,
+      isComplete,
+      winner,
+      losersByRound: Array.from(losersByRound.entries()),
+      isSorting,
+    });
+  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, isSorting]);
 
   const setRoster = useCallback((r: Character[]) => {
     setRosterState(r);
@@ -93,6 +149,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         setWinner(winners[0]);
       }
       setIsComplete(true);
+      clearState(); // Don't persist completed tournaments
       return;
     }
 
@@ -140,6 +197,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     setWinner(null);
     setLosersByRound(new Map());
     setIsSorting(false);
+    clearState();
   }, []);
 
   const store: TournamentStore = {

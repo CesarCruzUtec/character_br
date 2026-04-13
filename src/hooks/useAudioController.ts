@@ -81,6 +81,8 @@ export function useAudioController() {
   const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ytContainerRef = useRef<HTMLDivElement | null>(null);
   const ytFadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Generation counter to prevent stale async operations from playing
+  const playGenerationRef = useRef(0);
 
   const FADE_DURATION = 600;
   const FADE_STEP = 50;
@@ -207,28 +209,37 @@ export function useAudioController() {
     async (characterId: string, url: string) => {
       if (!url) return;
 
+      // Bump generation — any stale async result will be discarded
+      const gen = ++playGenerationRef.current;
+
       const isYT = isYouTubeUrl(url);
 
-      // If same character already playing, just boost volume
-      if (currentPlayingIdRef.current === characterId) {
-        const entry = audioMapRef.current.get(characterId);
-        if (entry?.type === "howler" && entry.howl.playing()) {
-          fadeHowler(entry.howl, entry.howl.volume(), 1);
-          return;
-        }
-        if (entry?.type === "youtube" && entry.player.getPlayerState() === window.YT?.PlayerState?.PLAYING) {
-          fadeYT(entry.player, entry.player.getVolume(), 100);
-          return;
-        }
-      }
-
-      // Fade out current audio
+      // Immediately stop whatever is currently playing (no crossfade on rapid switches)
       if (currentPlayingIdRef.current && currentPlayingIdRef.current !== characterId) {
         const prev = audioMapRef.current.get(currentPlayingIdRef.current);
         if (prev?.type === "howler") {
-          fadeHowler(prev.howl, prev.howl.volume(), 0, () => prev.howl.pause());
+          prev.howl.fade(prev.howl.volume(), 0, 150);
+          setTimeout(() => prev.howl.pause(), 150);
         } else if (prev?.type === "youtube") {
-          fadeYT(prev.player, prev.player.getVolume(), 0, () => prev.player.pauseVideo());
+          prev.player.setVolume(0);
+          prev.player.pauseVideo();
+        }
+      }
+
+      // If same character already playing, just ensure volume is up
+      if (currentPlayingIdRef.current === characterId) {
+        const entry = audioMapRef.current.get(characterId);
+        if (entry?.type === "howler" && entry.howl.playing()) {
+          entry.howl.fade(entry.howl.volume(), 1, FADE_DURATION);
+          return;
+        }
+        if (entry?.type === "youtube") {
+          const state = entry.player.getPlayerState();
+          if (state === window.YT?.PlayerState?.PLAYING || state === window.YT?.PlayerState?.PAUSED) {
+            entry.player.playVideo();
+            fadeYT(entry.player, entry.player.getVolume(), 100);
+            return;
+          }
         }
       }
 
@@ -237,15 +248,37 @@ export function useAudioController() {
         const videoId = extractYouTubeVideoId(url);
         if (!videoId) return;
         const entry = await getOrCreateYTPlayer(characterId, videoId);
+        // Stale check: a newer playAudio was called while we were loading
+        if (playGenerationRef.current !== gen) {
+          // We're stale — stop ourselves
+          entry?.player.setVolume(0);
+          entry?.player.pauseVideo();
+          return;
+        }
         if (!entry) return;
         currentPlayingIdRef.current = characterId;
         entry.player.playVideo();
-        setTimeout(() => { entry.player.setVolume(0); fadeYT(entry.player, 0, 100); }, 200);
+        setTimeout(() => {
+          // Double-check generation before fading in
+          if (playGenerationRef.current !== gen) {
+            entry.player.setVolume(0);
+            entry.player.pauseVideo();
+            return;
+          }
+          entry.player.setVolume(0);
+          fadeYT(entry.player, 0, 100);
+        }, 300);
       } else {
         const howl = getOrCreateHowl(characterId, url);
         if (!howl) return;
+        // Stale check for howler too (in case of rapid switches)
+        if (playGenerationRef.current !== gen) {
+          howl.stop();
+          return;
+        }
         currentPlayingIdRef.current = characterId;
         if (!howl.playing()) howl.play();
+        howl.volume(0);
         fadeHowler(howl, 0, 1);
       }
     },
@@ -257,6 +290,9 @@ export function useAudioController() {
       if (currentPlayingIdRef.current !== characterId) return;
       const entry = audioMapRef.current.get(characterId);
       if (!entry) return;
+
+      // Bump generation so any in-flight playAudio becomes stale
+      playGenerationRef.current++;
 
       if (entry.type === "howler") {
         fadeHowler(entry.howl, entry.howl.volume(), 0, () => entry.howl.pause());
