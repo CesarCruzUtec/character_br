@@ -26,6 +26,15 @@ export function MatchCard({
   const [imgError, setImgError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on client only (avoids hydration mismatch)
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Cycle through images smoothly
   useEffect(() => {
@@ -50,7 +59,7 @@ export function MatchCard({
 
   // Mobile: tap to preview, tap again to vote
   const handleMobileTap = useCallback(() => {
-    if (window.innerWidth < 768) {
+    if (isMobile) {
       if (!isExpanded) {
         setIsExpanded(true);
         onHoverStart(character);
@@ -61,7 +70,7 @@ export function MatchCard({
       // Desktop: click to vote directly
       onVote(character);
     }
-  }, [isExpanded, character, onHoverStart, onVote]);
+  }, [isMobile, isExpanded, character, onHoverStart, onVote]);
 
   const isLeft = side === "left";
 
@@ -72,7 +81,7 @@ export function MatchCard({
       animate={{
         x: 0,
         opacity: 1,
-        flex: isHovered ? 1.1 : isOtherHovered ? 0.9 : 1,
+        flexGrow: isHovered ? 1.1 : isOtherHovered ? 0.9 : 1,
         filter: isOtherHovered ? "blur(3px)" : "blur(0px)",
       }}
       exit={{ x: isLeft ? -200 : 200, opacity: 0 }}
