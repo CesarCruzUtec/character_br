@@ -258,6 +258,7 @@ export function useAudioController() {
         }
         if (!entry) return;
         currentPlayingIdRef.current = characterId;
+        entry.player.setVolume(0);
         entry.player.playVideo();
         setTimeout(() => {
           // Double-check generation before fading in
@@ -266,7 +267,6 @@ export function useAudioController() {
             entry.player.pauseVideo();
             return;
           }
-          entry.player.setVolume(0);
           fadeYT(entry.player, 0, 100);
         }, 300);
       } else {
@@ -320,5 +320,39 @@ export function useAudioController() {
     };
   }, []);
 
-  return { playAudio, pauseAudio };
+  const preloadAudio = useCallback(
+    async (characterId: string, url: string) => {
+      if (!url) return;
+      const existing = audioMapRef.current.get(characterId);
+      if (existing) return; // Already loaded
+
+      const isYT = isYouTubeUrl(url);
+      if (isYT) {
+        const videoId = extractYouTubeVideoId(url);
+        if (videoId) {
+          await getOrCreateYTPlayer(characterId, videoId);
+        }
+      } else {
+        getOrCreateHowl(characterId, url);
+      }
+    },
+    [getOrCreateHowl, getOrCreateYTPlayer]
+  );
+
+  const stopAllAudio = useCallback(() => {
+    playGenerationRef.current++;
+    if (currentPlayingIdRef.current) {
+      const entry = audioMapRef.current.get(currentPlayingIdRef.current);
+      if (entry?.type === "howler") {
+        entry.howl.stop();
+        entry.howl.volume(0);
+      } else if (entry?.type === "youtube") {
+        entry.player.setVolume(0);
+        entry.player.pauseVideo();
+      }
+      currentPlayingIdRef.current = null;
+    }
+  }, []);
+
+  return { playAudio, pauseAudio, preloadAudio, stopAllAudio };
 }
