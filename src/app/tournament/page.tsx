@@ -25,7 +25,7 @@ export default function TournamentPage() {
     getCurrentMatch,
   } = useTournament();
 
-  const { playAudio, pauseAudio, preloadAudio, stopAllAudio } = useAudioController();
+  const { playAudio, pauseAudio } = useAudioController();
   const [hoveredCharacter, setHoveredCharacter] = useState<Character | null>(null);
 
   // Start tournament on mount if not started
@@ -49,21 +49,11 @@ export default function TournamentPage() {
   const currentRound = rounds[currentRoundIndex];
   const currentMatch = useMemo(() => getCurrentMatch(), [getCurrentMatch, rounds, currentRoundIndex, currentMatchIndex]);
 
-  // Get current round characters for sorting animation
-  const currentRoundCharacters = useMemo(() => {
-    if (!currentRound) return [];
-    return currentRound.matches.flatMap((m) =>
-      m.character2 ? [m.character1, m.character2] : [m.character1]
-    );
-  }, [currentRound]);
-
   const handleVote = useCallback(
     (winner: Character) => {
-      stopAllAudio();
-      setHoveredCharacter(null);
       voteWinner(winner);
     },
-    [voteWinner, stopAllAudio]
+    [voteWinner]
   );
 
   const handleHoverStart = useCallback(
@@ -90,26 +80,13 @@ export default function TournamentPage() {
     setIsSorting(false);
   }, [setIsSorting]);
 
-  // Preload audio for upcoming characters during sorting
-  useEffect(() => {
-    if (!isSorting || !currentRound) return;
-    const charactersToPreload = currentRoundCharacters.slice(0, 10);
-    charactersToPreload.forEach((char) => {
-      if (char.music) {
-        preloadAudio(String(char.id), char.music);
-      }
-    });
-  }, [isSorting, currentRoundCharacters, currentRound, preloadAudio]);
-
-  // Preload next match characters when match changes
-  useEffect(() => {
-    if (isSorting || !currentRound) return;
-    const upcomingMatches = currentRound.matches.slice(currentMatchIndex, currentMatchIndex + 3);
-    upcomingMatches.forEach((match) => {
-      if (match.character1.music) preloadAudio(String(match.character1.id), match.character1.music);
-      if (match.character2?.music) preloadAudio(String(match.character2.id), match.character2.music);
-    });
-  }, [currentRoundIndex, currentMatchIndex, isSorting, currentRound, preloadAudio]);
+  // Get current round characters for sorting animation
+  const currentRoundCharacters = useMemo(() => {
+    if (!currentRound) return [];
+    return currentRound.matches.flatMap((m) =>
+      m.character2 ? [m.character1, m.character2] : [m.character1]
+    );
+  }, [currentRound]);
 
   if (roster.length < 2) return null;
 
