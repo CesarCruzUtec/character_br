@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Character } from "@/lib/types";
 
@@ -11,6 +11,7 @@ interface MatchCardProps {
   onHoverEnd: (character: Character) => void;
   side: "left" | "right";
   isHovered: boolean;
+  isOtherHovered: boolean;
 }
 
 export function MatchCard({
@@ -20,9 +21,20 @@ export function MatchCard({
   onHoverEnd,
   side,
   isHovered,
+  isOtherHovered,
 }: MatchCardProps) {
   const [imgError, setImgError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Cycle through images smoothly
+  useEffect(() => {
+    if (character.images.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % character.images.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [character.images.length]);
 
   const handleClick = useCallback(() => {
     onVote(character);
@@ -55,12 +67,13 @@ export function MatchCard({
 
   return (
     <motion.div
-      className={`relative flex-1 cursor-pointer select-none overflow-hidden ${isLeft ? "clip-left" : "clip-right"}`}
+      className="relative flex-1 cursor-pointer select-none overflow-hidden"
       initial={{ x: isLeft ? -200 : 200, opacity: 0 }}
       animate={{
         x: 0,
         opacity: 1,
-        flex: isHovered ? 1.12 : 1,
+        flex: isHovered ? 1.1 : isOtherHovered ? 0.9 : 1,
+        filter: isOtherHovered ? "blur(3px)" : "blur(0px)",
       }}
       exit={{ x: isLeft ? -200 : 200, opacity: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 25 }}
@@ -68,17 +81,25 @@ export function MatchCard({
       onHoverEnd={handleMouseLeave}
       onClick={handleMobileTap}
     >
-      {/* Background image */}
+      {/* Background images with crossfade */}
       <div className="absolute inset-0">
         {!imgError ? (
-          <img
-            src={character.images[0]}
-            alt={character.name}
-            className={`h-full w-full ${
-              isLeft ? "object-right-bottom" : "object-left-bottom"
-            } object-contain`}
-            onError={() => setImgError(true)}
-          />
+          character.images.map((img, index) => (
+            <motion.img
+              key={img}
+              src={img}
+              alt={character.name}
+              className={`absolute inset-0 h-full w-full ${
+                isLeft ? "object-right" : "object-left"
+              } object-cover`}
+              initial={false}
+              animate={{
+                opacity: index === currentImageIndex ? 1 : 0,
+              }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              onError={() => setImgError(true)}
+            />
+          ))
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gray-800">
             <span className="text-6xl">🎭</span>
@@ -86,12 +107,12 @@ export function MatchCard({
         )}
       </div>
 
-      {/* Bottom gradient for name readability */}
-      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+      {/* Top gradient for name readability */}
+      <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
 
-      {/* Name — always visible at bottom */}
+      {/* Name — always visible at top */}
       <motion.div
-        className={`absolute bottom-6 ${isLeft ? "left-6" : "right-6"} z-10`}
+        className={`absolute top-6 ${isLeft ? "left-6" : "right-6"} z-10`}
         animate={{ scale: isHovered ? 1.08 : 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
@@ -106,7 +127,7 @@ export function MatchCard({
       {/* Music icon */}
       {character.music && (
         <motion.div
-          className={`absolute top-4 ${isLeft ? "left-4" : "right-4"} flex h-8 w-8 items-center justify-center rounded-full bg-purple-600/80 text-sm backdrop-blur-sm`}
+          className={`absolute top-20 ${isLeft ? "left-6" : "right-6"} flex h-8 w-8 items-center justify-center rounded-full text-sm backdrop-blur-sm`}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.3 }}

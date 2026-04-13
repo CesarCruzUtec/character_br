@@ -141,6 +141,7 @@ export default function TournamentPage() {
                     onHoverEnd={handleHoverEnd}
                     side="left"
                     isHovered={hoveredCharacter?.id === currentMatch.match.character1.id}
+                    isOtherHovered={hoveredCharacter?.id === currentMatch.match.character2?.id}
                   />
                 </AnimatePresence>
 
@@ -176,6 +177,7 @@ export default function TournamentPage() {
                     onHoverEnd={handleHoverEnd}
                     side="right"
                     isHovered={hoveredCharacter?.id === currentMatch.match.character2.id}
+                    isOtherHovered={hoveredCharacter?.id === currentMatch.match.character1.id}
                   />
                 </AnimatePresence>
 
