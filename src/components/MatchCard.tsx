@@ -32,7 +32,7 @@ export function MatchCard({
     if (character.images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % character.images.length);
-    }, 3000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [character.images.length]);
 
@@ -82,16 +82,16 @@ export function MatchCard({
       onClick={handleMobileTap}
     >
       {/* Background images with crossfade */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 bg-gray-900">
         {!imgError ? (
           character.images.map((img, index) => (
             <motion.img
               key={img}
               src={img}
               alt={character.name}
-              className={`absolute inset-0 h-full w-full ${
-                isLeft ? "object-right" : "object-left"
-              } object-cover`}
+              className={`absolute inset-4 h-[calc(100%-2rem)] w-[calc(100%-2rem)] ${
+                isLeft ? "object-right-bottom" : "object-left-bottom"
+              } object-contain`}
               initial={false}
               animate={{
                 opacity: index === currentImageIndex ? 1 : 0,
