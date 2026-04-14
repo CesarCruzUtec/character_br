@@ -1,6 +1,36 @@
 import { SaveSlot } from "./store";
 
 const SAVES_KEY = "tournament_saves";
+const AUTOSAVE_KEY = "tournament_autosave";
+
+// --- Autosave functions ---
+
+export function getAutosave(): SaveSlot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SaveSlot;
+  } catch {
+    return null;
+  }
+}
+
+export function setAutosave(slot: SaveSlot) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(slot));
+  } catch {
+    // Storage full — silently ignore
+  }
+}
+
+export function clearAutosave() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(AUTOSAVE_KEY);
+}
+
+// --- Regular save functions ---
 
 export function getSaveSlots(): SaveSlot[] {
   if (typeof window === "undefined") return [];

@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toPng } from "html-to-image";
 import { Character } from "@/lib/types";
 
 interface BracketSummaryProps {
@@ -17,6 +18,8 @@ export function BracketSummary({
 }: BracketSummaryProps) {
   const rounds = Array.from(losersByRound.entries()).reverse();
   const [confetti, setConfetti] = useState<Array<{ left: number; x: number; duration: number; delay: number; color: string }>>([]);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const colors = ["#d4a853", "#b8923e", "#fafafa", "#a1a1aa", "#71717a"];
@@ -31,8 +34,79 @@ export function BracketSummary({
     );
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    if (!summaryRef.current) return;
+    setDownloading(true);
+
+    // Collect all img elements on the page (we capture the full page)
+    const images = Array.from(document.querySelectorAll("img"));
+    const originalSrcs = images.map((img) => img.src);
+
+    try {
+      // Convert every image to a base64 data URL via the proxy so
+      // html-to-image never has to make cross-origin requests itself.
+      await Promise.all(
+        images.map(async (img, i) => {
+          const src = originalSrcs[i];
+          // Skip already-inlined data URLs
+          if (src.startsWith("data:")) return;
+
+          try {
+            const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(src)}`;
+            const res = await fetch(proxyUrl);
+            if (!res.ok) return; // leave original on failure
+            const blob = await res.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            // Swap src to the inline data URL
+            img.src = dataUrl;
+            // Wait for the browser to paint the new src
+            await new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            });
+          } catch {
+            // If proxy fails, leave the original src in place
+          }
+        })
+      );
+
+      // Capture the full page (documentElement) so we get the true
+      // rendered width × full scroll height with no clipping.
+      const node = document.documentElement;
+      const fullWidth = node.scrollWidth;
+      const fullHeight = node.scrollHeight;
+
+      const dataUrl = await toPng(node, {
+        backgroundColor: "#09090b",
+        pixelRatio: 2,
+        cacheBust: true,
+        width: fullWidth,
+        height: fullHeight,
+      });
+
+      const link = document.createElement("a");
+      link.download = `tournament-summary-${winner.name}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to generate summary image:", err);
+    } finally {
+      // Restore original srcs
+      images.forEach((img, i) => {
+        img.src = originalSrcs[i];
+      });
+      setDownloading(false);
+    }
+  }, [winner]);
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div ref={summaryRef} className="mx-auto max-w-4xl px-4 py-8">
       {/* Winner Section */}
       <motion.div
         className="mb-12 text-center"
@@ -150,13 +224,20 @@ export function BracketSummary({
         </div>
       </motion.div>
 
-      {/* Play Again */}
+      {/* Actions */}
       <motion.div
-        className="mt-10 text-center"
+        className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2.5 }}
       >
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="rounded-lg border border-[#d4a853]/30 bg-zinc-900 px-8 py-3 text-sm font-semibold uppercase tracking-wider text-[#d4a853] transition-all hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
+        >
+          {downloading ? "Generating..." : "Download Summary"}
+        </button>
         <button
           onClick={onPlayAgain}
           className="rounded-lg bg-[#d4a853] px-8 py-3 text-sm font-semibold uppercase tracking-wider text-zinc-950 transition-all hover:bg-[#e0b560] active:scale-95"

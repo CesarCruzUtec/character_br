@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTournament } from "@/lib/store";
 import { LoadPanel } from "@/components/LoadPanel";
+import { getAutosave } from "@/lib/saves";
+import type { SaveSlot } from "@/lib/store";
 import {
   getFavorites,
   addFavorite,
@@ -19,12 +21,14 @@ export default function HomePage() {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<FavoriteEntry[]>([]);
   const [isFav, setIsFav] = useState(false);
+  const [autosave, setAutosave] = useState<SaveSlot | null>(null);
   const router = useRouter();
-  const { setRoster, setCurrentPastebinId } = useTournament();
+  const { setRoster, setCurrentPastebinId, loadAutosave } = useTournament();
 
-  // Load favorites on mount
+  // Load favorites and autosave on mount
   useEffect(() => {
     setFavorites(getFavorites());
+    setAutosave(getAutosave());
   }, []);
 
   // Track whether current ID is favorited
@@ -203,6 +207,21 @@ export default function HomePage() {
             <div className="mt-3">
               <LoadPanel />
             </div>
+
+            {autosave && (
+              <motion.button
+                onClick={() => {
+                  loadAutosave();
+                  router.push("/tournament");
+                }}
+                className="mt-2 w-full rounded-lg border border-[#d4a853]/30 bg-zinc-900 py-3 text-sm font-medium text-[#d4a853] transition-all hover:bg-zinc-800"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                Resume Autosave
+              </motion.button>
+            )}
 
             <div className="mt-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-zinc-800" />

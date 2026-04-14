@@ -9,7 +9,7 @@ import {
   calculateTotalRounds,
   getRoundLosers,
 } from "@/lib/bracket";
-import { addSaveSlot, removeSaveSlot } from "@/lib/saves";
+import { addSaveSlot, removeSaveSlot, setAutosave, clearAutosave, getAutosave } from "@/lib/saves";
 
 const STORAGE_KEY = "tournament_state";
 
@@ -83,6 +83,26 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     setIsHydrated(true);
   }, []);
 
+  // Autosave helper — writes current state to a dedicated autosave slot
+  const doAutosave = useCallback(() => {
+    if (roster.length < 2) return;
+    if (isComplete) return;
+    const slot: SaveSlot = {
+      id: "autosave",
+      name: "Autosave",
+      pastebinId: currentPastebinId,
+      savedAt: Date.now(),
+      roster,
+      rounds,
+      currentRoundIndex,
+      currentMatchIndex,
+      isComplete,
+      winner,
+      losersByRound: Array.from(losersByRound.entries()),
+    };
+    setAutosave(slot);
+  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, currentPastebinId]);
+
   // Persist state whenever it changes (but not completed tournaments)
   useEffect(() => {
     if (isComplete) return; // Don't persist completed tournaments
@@ -98,7 +118,12 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       isSorting,
       currentPastebinId,
     });
-  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, isSorting, currentPastebinId]);
+
+    // Autosave whenever tournament state changes (after a vote)
+    if (roster.length >= 2 && rounds.length > 0 && !isComplete) {
+      doAutosave();
+    }
+  }, [roster, rounds, currentRoundIndex, currentMatchIndex, isComplete, winner, losersByRound, isSorting, currentPastebinId, doAutosave]);
 
   const setRoster = useCallback((r: Character[]) => {
     setRosterState(r);
@@ -169,6 +194,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       }
       setIsComplete(true);
       clearState(); // Don't persist completed tournaments
+      clearAutosave(); // Clear autosave on completion
       return;
     }
 
@@ -218,6 +244,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     setIsSorting(false);
     setCurrentPastebinId("");
     clearState();
+    clearAutosave();
   }, []);
 
   const saveSlot = useCallback(
@@ -257,6 +284,20 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     removeSaveSlot(slotId);
   }, []);
 
+  const loadAutosave = useCallback(() => {
+    const slot = getAutosave();
+    if (!slot) return;
+    setRosterState(slot.roster);
+    setRounds(slot.rounds);
+    setCurrentRoundIndex(slot.currentRoundIndex);
+    setCurrentMatchIndex(slot.currentMatchIndex);
+    setIsComplete(slot.isComplete);
+    setWinner(slot.winner);
+    setLosersByRound(new Map(slot.losersByRound));
+    setIsSorting(false);
+    setCurrentPastebinId(slot.pastebinId);
+  }, []);
+
   const store: TournamentStore = {
     roster,
     rounds,
@@ -282,6 +323,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     saveSlot,
     loadSlot,
     deleteSlot,
+    loadAutosave,
   };
 
   return (

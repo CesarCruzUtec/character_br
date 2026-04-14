@@ -47,6 +47,7 @@ export interface TournamentStore {
   saveSlot: (name: string) => void;
   loadSlot: (slot: SaveSlot) => void;
   deleteSlot: (slotId: string) => void;
+  loadAutosave: () => void;
 }
 
 export const TournamentContext = createContext<TournamentStore | null>(null);

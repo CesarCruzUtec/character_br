@@ -4,16 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTournament, SaveSlot } from "@/lib/store";
-import { getSaveSlots, removeSaveSlot, downloadSaves, importSaves } from "@/lib/saves";
+import { getSaveSlots, removeSaveSlot, downloadSaves, importSaves, getAutosave } from "@/lib/saves";
 
 export function LoadPanel() {
   const router = useRouter();
   const { loadSlot } = useTournament();
   const [isOpen, setIsOpen] = useState(false);
   const [slots, setSlots] = useState<SaveSlot[]>([]);
+  const [autosave, setAutosaveSlot] = useState<SaveSlot | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
-  const refreshSlots = () => setSlots(getSaveSlots());
+  const refreshSlots = () => {
+    setSlots(getSaveSlots());
+    setAutosaveSlot(getAutosave());
+  };
 
   const handleOpen = () => {
     refreshSlots();
@@ -114,11 +118,37 @@ export function LoadPanel() {
               )}
 
               <div className="max-h-80 space-y-4 overflow-y-auto">
-                {slots.length === 0 ? (
+                {/* Autosave slot */}
+                {autosave && (
+                  <div className="rounded-md border border-[#d4a853]/30 bg-zinc-900 p-3">
+                    <p className="mb-2 text-[10px] uppercase tracking-widest text-[#d4a853]">
+                      Autosave
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-medium text-white">
+                          {autosave.name}
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          {new Date(autosave.savedAt).toLocaleString()}{}
+                          &middot; {autosave.roster.length} characters
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleLoad(autosave)}
+                        className="shrink-0 rounded-md bg-[#d4a853] px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-[#e0b560]"
+                      >
+                        Load
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {slots.length === 0 && !autosave ? (
                   <p className="py-12 text-center text-sm text-zinc-600">
                     No saved runs yet
                   </p>
-                ) : (
+                ) : slots.length > 0 ? (
                   Object.entries(grouped).map(([pastebinId, groupSlots]) => (
                     <div key={pastebinId}>
                       <p className="mb-2 text-[10px] uppercase tracking-widest text-zinc-600">
@@ -173,7 +203,7 @@ export function LoadPanel() {
                       </div>
                     </div>
                   ))
-                )}
+                ) : null}
               </div>
 
               <button
