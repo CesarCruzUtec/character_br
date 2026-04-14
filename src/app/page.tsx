@@ -151,6 +151,21 @@ export default function HomePage() {
           <div className="mt-3">
             <LoadPanel />
           </div>
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-zinc-800" />
+            <span className="text-xs text-zinc-600">or</span>
+            <div className="h-px flex-1 bg-zinc-800" />
+          </div>
+
+          <motion.button
+            onClick={() => router.push("/creator")}
+            className="mt-3 w-full rounded-lg border border-zinc-700 py-2.5 text-xs font-medium uppercase tracking-wider text-zinc-400 transition-all hover:border-[#d4a853]/50 hover:text-[#d4a853]"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Create a Roster
+          </motion.button>
         </motion.div>
 
         {/* Instructions */}
