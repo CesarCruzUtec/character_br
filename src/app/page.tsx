@@ -98,7 +98,7 @@ export default function HomePage() {
 
   return (
     <main className="flex min-h-screen bg-[#09090b] px-4 py-8">
-      <div className="mx-auto flex w-full max-w-5xl gap-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 lg:flex-row">
         {/* Left panel: main content */}
         <motion.div
           className="flex-1 flex flex-col items-center justify-center text-center"
@@ -264,7 +264,7 @@ export default function HomePage() {
 
         {/* Right panel: Favorites */}
         <motion.div
-          className="hidden lg:flex w-72 shrink-0 flex-col"
+          className="flex w-full flex-col lg:w-72 lg:shrink-0"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}

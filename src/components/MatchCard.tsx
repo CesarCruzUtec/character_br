@@ -121,12 +121,13 @@ export function MatchCard({
 
       {/* Name — always visible at top */}
       <motion.div
-        className={`absolute top-6 ${isLeft ? "left-6" : "right-6"} z-10`}
+        className="absolute top-4 left-4 right-4 z-10 md:top-6 md:right-auto md:left-6"
+        style={isLeft ? {} : { left: "auto", right: "1.5rem", textAlign: "right" }}
         animate={{ scale: isHovered ? 1.05 : 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <h2
-          className="text-4xl tracking-wider text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] md:text-6xl lg:text-7xl"
+          className="text-3xl tracking-wider text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] md:text-5xl lg:text-6xl"
           style={{ fontFamily: "var(--font-display)" }}
         >
           {character.name}
@@ -136,7 +137,7 @@ export function MatchCard({
       {/* Music icon */}
       {character.music && (
         <motion.div
-          className={`absolute top-20 ${isLeft ? "left-6" : "right-6"} flex h-7 w-7 items-center justify-center rounded-full border border-zinc-600/50 bg-zinc-900/60 text-xs backdrop-blur-sm`}
+          className={`absolute top-16 md:top-20 ${isLeft ? "left-4 md:left-6" : "right-4 md:right-6"} flex h-7 w-7 items-center justify-center rounded-full border border-zinc-600/50 bg-zinc-900/60 text-xs backdrop-blur-sm`}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.3 }}

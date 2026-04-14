@@ -87,7 +87,7 @@ export function LoadPanel() {
             onClick={() => setIsOpen(false)}
           >
             <motion.div
-              className="w-full max-w-lg rounded-lg border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
+              className="mx-4 w-full max-w-lg rounded-lg border border-zinc-800 bg-zinc-950 p-5 shadow-2xl max-h-[90vh] overflow-y-auto"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

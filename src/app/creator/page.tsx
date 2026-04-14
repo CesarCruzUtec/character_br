@@ -423,7 +423,7 @@ export default function CreatorPage() {
       {/* Two-panel layout */}
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-2 lg:gap-6">
         {/* Left panel: Card inputs */}
-        <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] scrollbar-thin pr-1">
+        <div className="space-y-3 overflow-y-auto lg:max-h-[calc(100vh-120px)] scrollbar-thin pr-1">
           <AnimatePresence mode="popLayout">
             {cards.map((card, index) => (
               <CharacterCard
@@ -447,7 +447,7 @@ export default function CreatorPage() {
         </div>
 
         {/* Right panel: JSON preview */}
-        <div className="sticky top-[60px] h-[calc(100vh-120px)]">
+        <div className="lg:sticky lg:top-[60px] lg:h-[calc(100vh-120px)] h-80">
           <div className="flex h-full flex-col rounded-xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm">
             <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
               <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">

@@ -120,10 +120,10 @@ export default function TournamentPage() {
       {!isSorting && currentMatch && (
         <div className="flex min-h-screen flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-800/80 px-6 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 px-4 py-3 md:px-6">
             <div>
               <h2
-                className="text-lg tracking-wider text-white"
+                className="text-base tracking-wider text-white md:text-lg"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 {currentMatch.round.name}
@@ -133,30 +133,31 @@ export default function TournamentPage() {
                 {currentRound?.matches.length ?? 0}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setMusicEnabled(!musicEnabled)}
-                className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
                   musicEnabled
                     ? "border-zinc-800 text-zinc-400 hover:bg-zinc-900 hover:text-white"
                     : "border-red-900/50 text-red-400 hover:bg-red-950/30 hover:text-red-300"
                 }`}
               >
-                {musicEnabled ? "🔊 Music On" : "🔇 Music Off"}
+                {musicEnabled ? "🔊" : "🔇"}
+                <span className="hidden sm:inline"> {musicEnabled ? "Music On" : "Music Off"}</span>
               </button>
               <button
                 onClick={() => router.push("/")}
-                className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+                className="rounded-md border border-zinc-800 px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
               >
                 Home
               </button>
               <button
                 onClick={() => setShowSaveMenu(true)}
-                className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
+                className="rounded-md border border-zinc-800 px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"
               >
                 Save / Load
               </button>
-              <div className="text-right">
+              <div className="hidden text-right sm:block">
                 <p className="text-[10px] uppercase tracking-widest text-zinc-600">
                   {roster.length} characters
                 </p>
@@ -167,11 +168,11 @@ export default function TournamentPage() {
             </div>
           </div>
 
-          {/* Split Screen Match — halves touch directly */}
-          <div className="relative flex flex-1 overflow-hidden">
+          {/* Split Screen Match — side-by-side on md+, stacked on mobile */}
+          <div className="relative flex flex-1 flex-col overflow-hidden md:flex-row">
             {currentMatch.match.character2 ? (
               <>
-                {/* Left character */}
+                {/* Top/Left character */}
                 <AnimatePresence mode="wait">
                   <MatchCard
                     key={currentMatch.match.id + "-c1"}
@@ -207,7 +208,7 @@ export default function TournamentPage() {
                   </motion.div>
                 </div>
 
-                {/* Right character */}
+                {/* Bottom/Right character */}
                 <AnimatePresence mode="wait">
                   <MatchCard
                     key={currentMatch.match.id + "-c2"}
