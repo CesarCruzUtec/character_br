@@ -183,6 +183,9 @@ export default function TournamentPage() {
                     side="left"
                     isHovered={hoveredCharacter?.id === currentMatch.match.character1.id}
                     isOtherHovered={hoveredCharacter?.id === currentMatch.match.character2?.id}
+                    musicEnabled={musicEnabled}
+                    playAudio={playAudio}
+                    pauseAudio={pauseAudio}
                   />
                 </AnimatePresence>
 
@@ -219,6 +222,9 @@ export default function TournamentPage() {
                     side="right"
                     isHovered={hoveredCharacter?.id === currentMatch.match.character2.id}
                     isOtherHovered={hoveredCharacter?.id === currentMatch.match.character1.id}
+                    musicEnabled={musicEnabled}
+                    playAudio={playAudio}
+                    pauseAudio={pauseAudio}
                   />
                 </AnimatePresence>
 

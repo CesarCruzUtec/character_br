@@ -15,6 +15,10 @@ interface MatchCardProps {
   side: "left" | "right";
   isHovered: boolean;
   isOtherHovered: boolean;
+  // Audio — passed so mobile modal can control playback directly
+  musicEnabled?: boolean;
+  playAudio?: (id: string, url: string) => void;
+  pauseAudio?: (id: string) => void;
 }
 
 export function MatchCard({
@@ -25,6 +29,9 @@ export function MatchCard({
   side,
   isHovered,
   isOtherHovered,
+  musicEnabled = false,
+  playAudio,
+  pauseAudio,
 }: MatchCardProps) {
   const [imgError, setImgError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -81,9 +88,13 @@ export function MatchCard({
       longPressTimer.current = setTimeout(() => {
         didLongPress.current = true;
         setShowInfoModal(true);
+        // Start audio on long-press (this IS a user gesture on mobile)
+        if (musicEnabled && character.music && playAudio) {
+          playAudio(String(character.id), character.music);
+        }
       }, LONG_PRESS_MS);
     },
-    [isMobile]
+    [isMobile, musicEnabled, character, playAudio]
   );
 
   const handlePointerUp = useCallback(
@@ -205,7 +216,12 @@ export function MatchCard({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowInfoModal(false)}
+              onClick={() => {
+                setShowInfoModal(false);
+                if (musicEnabled && character.music && pauseAudio) {
+                  pauseAudio(String(character.id));
+                }
+              }}
             >
               {/* Backdrop */}
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -219,12 +235,12 @@ export function MatchCard({
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Character image strip */}
-                <div className="h-36 w-full overflow-hidden rounded-t-2xl bg-zinc-950">
+                {/* Character image */}
+                <div className="w-full overflow-hidden rounded-t-2xl bg-zinc-950" style={{ aspectRatio: "4/3" }}>
                   <img
                     src={character.images[currentImageIndex]}
                     alt={character.name}
-                    className="h-full w-full object-cover object-top"
+                    className="h-full w-full object-contain"
                   />
                 </div>
 
@@ -245,7 +261,13 @@ export function MatchCard({
 
                   <div className="mt-5 flex gap-3">
                     <button
-                      onClick={() => setShowInfoModal(false)}
+                      onClick={() => {
+                        setShowInfoModal(false);
+                        // Pause audio when closing without voting
+                        if (musicEnabled && character.music && pauseAudio) {
+                          pauseAudio(String(character.id));
+                        }
+                      }}
                       className="flex-1 rounded-lg border border-zinc-700 py-3 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800"
                     >
                       Close
@@ -253,6 +275,10 @@ export function MatchCard({
                     <button
                       onClick={() => {
                         setShowInfoModal(false);
+                        // Pause audio then vote (next match will reset audio)
+                        if (musicEnabled && character.music && pauseAudio) {
+                          pauseAudio(String(character.id));
+                        }
                         onVote(character);
                       }}
                       className="flex-1 rounded-lg bg-[#d4a853] py-3 text-sm font-semibold uppercase tracking-wider text-zinc-950 transition-colors hover:bg-[#e0b560]"
