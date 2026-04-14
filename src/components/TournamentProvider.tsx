@@ -61,6 +61,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [isSorting, setIsSorting] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentPastebinId, setCurrentPastebinId] = useState("");
+  const [musicEnabled, setMusicEnabled] = useState(true);
 
   const roundsRef = useRef<Round[]>(rounds);
   roundsRef.current = rounds;
@@ -274,6 +275,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     isSorting,
     setIsSorting,
     isHydrated,
+    musicEnabled,
+    setMusicEnabled,
     currentPastebinId,
     setCurrentPastebinId,
     saveSlot,

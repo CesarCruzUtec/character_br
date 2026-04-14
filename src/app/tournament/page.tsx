@@ -25,6 +25,8 @@ export default function TournamentPage() {
     voteWinner,
     getCurrentMatch,
     isHydrated,
+    musicEnabled,
+    setMusicEnabled,
   } = useTournament();
 
   const { playAudio, pauseAudio } = useAudioController();
@@ -42,6 +44,13 @@ export default function TournamentPage() {
       startTournament();
     }
   }, [isHydrated, roster, rounds, startTournament, router]);
+
+  // Stop audio when music is disabled
+  useEffect(() => {
+    if (!musicEnabled && hoveredCharacter?.music) {
+      pauseAudio(String(hoveredCharacter.id));
+    }
+  }, [musicEnabled, hoveredCharacter, pauseAudio]);
 
   // Navigate to summary when complete
   useEffect(() => {
@@ -63,21 +72,21 @@ export default function TournamentPage() {
   const handleHoverStart = useCallback(
     (character: Character) => {
       setHoveredCharacter(character);
-      if (character.music) {
+      if (musicEnabled && character.music) {
         playAudio(String(character.id), character.music);
       }
     },
-    [playAudio]
+    [playAudio, musicEnabled]
   );
 
   const handleHoverEnd = useCallback(
     (character: Character) => {
       setHoveredCharacter(null);
-      if (character.music) {
+      if (musicEnabled && character.music) {
         pauseAudio(String(character.id));
       }
     },
-    [pauseAudio]
+    [pauseAudio, musicEnabled]
   );
 
   const handleSortingComplete = useCallback(() => {
@@ -125,6 +134,16 @@ export default function TournamentPage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMusicEnabled(!musicEnabled)}
+                className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                  musicEnabled
+                    ? "border-zinc-800 text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                    : "border-red-900/50 text-red-400 hover:bg-red-950/30 hover:text-red-300"
+                }`}
+              >
+                {musicEnabled ? "🔊 Music On" : "🔇 Music Off"}
+              </button>
               <button
                 onClick={() => router.push("/")}
                 className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white"

@@ -39,6 +39,8 @@ export interface TournamentStore {
   isSorting: boolean;
   setIsSorting: (v: boolean) => void;
   isHydrated: boolean;
+  musicEnabled: boolean;
+  setMusicEnabled: (v: boolean) => void;
   // Save/Load
   currentPastebinId: string;
   setCurrentPastebinId: (id: string) => void;
